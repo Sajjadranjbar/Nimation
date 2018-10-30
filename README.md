@@ -1,4 +1,4 @@
-# nimation
+# Nimation
 Network Simulation Animation (Nimation)
 
 This project's aim is to facilitate creating presentations for wired and wireless network simulations using animations.
