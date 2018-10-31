@@ -11,6 +11,8 @@ class NimationObject {
 		this.element.style.border = 'solid'
 		this.x = x
 		this.y = y
+		this.destX = null
+		this.destY = null
 		this.width = width
 		this.height = height
 		this.element.style.position = 'absolute'
@@ -21,6 +23,7 @@ class NimationObject {
 		this.element.style.width = width + 'px'
 		this.element.style.height = height + 'px'
 		this.element.style.display = 'table'
+		this.lastReceivedPacket = null
 	}
 	setScene(scene) {
 		this.scene = scene
@@ -44,24 +47,28 @@ class NimationObject {
 			this.element.style.transform = ''
 			this.x = x
 			this.y = y
-			console.log(this.x)
-			console.log(this.y)
 		}
 	}
 	move(x, y, duration, loop) {
 		const deltaX = x - this.x
 		const deltaY = y - this.y
-		return anime({
-			targets: this.element,
-			translateX: [{ value: deltaX + 'px', duration }],
-			translateY: [{ value: deltaY + 'px', duration }],
-			complete: () => {
-				this.updateXY(x, y)
-			},
-			loop,
-			elasticity: 1
+
+		return new Promise(done => {
+			anime({
+				targets: this.element,
+				translateX: [{ value: deltaX + 'px', duration }],
+				translateY: [{ value: deltaY + 'px', duration }],
+				complete: () => {
+					this.updateXY(x, y)
+					done()
+				},
+				loop,
+				elasticity: 1,
+				autoplay: true
+			})
 		})
 	}
+
 	setBorderWidth(width) {
 		if (this.element !== null) {
 			this.element.style.borderWidth = width + 'px'
@@ -105,10 +112,12 @@ class NimationObject {
 		}
 	}
 	setSize(width, height) {
-		this.element.style.width = width + 'px'
-		this.element.style.height = height + 'px'
 		this.width = width
 		this.height = height
+	}
+	setXY(x, y) {
+		this.x = x
+		this.y = y
 	}
 	getX() {
 		return this.x
@@ -116,46 +125,67 @@ class NimationObject {
 	getY() {
 		return this.y
 	}
+	getWidth() {
+		return this.width
+	}
+	getHeight() {
+		return this.height
+	}
 
 	/*
 		every object use this method to broadcast 
 		it's message to the scene attached to.
 	*/
-	broadcast(packet, animationLoop, size, duration) {
+	broadcast(packet, loop, size, duration) {
 		const broadcast = this.cloneBorder()
 		this.scene.addObject(broadcast)
 
-		return anime({
-			targets: broadcast.getElement(),
-			complete: () => {
-				this.scene.removeObject(broadcast)
-			},
-			width: {
-				value: '+=' + size,
-				duration,
-				easing: 'easeInOutSine'
-			},
-			height: {
-				value: '+=' + size,
-				duration,
-				easing: 'easeInOutSine'
-			},
-			left: {
-				value: '-=' + size / 2,
-				duration,
-				easing: 'easeInOutSine'
-			},
-			top: {
-				value: '-=' + size / 2,
-				duration,
-				easing: 'easeInOutSine'
-			},
-			opacity: {
-				value: 0,
-				duration,
-				easing: 'easeInOutSine'
-			},
-			loop: 3
+		return new Promise(done => {
+			anime({
+				targets: broadcast.getElement(),
+				complete: () => {
+					this.scene.removeObject(broadcast)
+					done()
+				},
+				update: () => {
+					broadcast.setSize(
+						parseInt(broadcast.getElement().style.width.slice(0, -2)),
+						parseInt(broadcast.getElement().style.height.slice(0, -2))
+					)
+
+					broadcast.setXY(
+						parseInt(broadcast.getElement().style.left.slice(0, -2)),
+						parseInt(broadcast.getElement().style.top.slice(0, -2))
+					)
+					this.scene.updateMessage(packet, broadcast, this)
+				},
+				width: {
+					value: '+=' + size,
+					duration,
+					easing: 'easeInOutSine'
+				},
+				height: {
+					value: '+=' + size,
+					duration,
+					easing: 'easeInOutSine'
+				},
+				left: {
+					value: '-=' + size / 2,
+					duration,
+					easing: 'easeInOutSine'
+				},
+				top: {
+					value: '-=' + size / 2,
+					duration,
+					easing: 'easeInOutSine'
+				},
+				opacity: {
+					value: 0,
+					duration,
+					easing: 'easeInOutSine'
+				},
+				loop
+			})
 		})
 	}
 	/*
@@ -164,6 +194,15 @@ class NimationObject {
 	*/
 	recv(packet) {
 		//received a packet from scene
+		if (
+			this.lastReceivedPacket !== null &&
+			this.lastReceivedPacket.uid === packet.uid
+		) {
+			return
+		}
+
+		// new packet recv here do stuffs
+		this.lastReceivedPacket = packet
 		console.log(packet)
 	}
 }

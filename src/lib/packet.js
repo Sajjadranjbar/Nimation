@@ -2,6 +2,8 @@ class Packet {
 	constructor(payload) {
 		this.payload = payload
 		this.headers = []
+		this.uid = Packet.uidCounter
+		Packet.uidCounter++
 	}
 	addHeader(header) {
 		const index = this.headers.findIndex(search => search.type === header.type)
@@ -35,5 +37,5 @@ class Packet {
 		this.payload = payload
 	}
 }
-
+Packet.uidCounter = 0
 export default Packet
