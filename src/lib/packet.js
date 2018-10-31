@@ -1,9 +1,11 @@
 class Packet {
-	constructor(payload) {
+	constructor(payload, receiver = null, type = 'data') {
 		this.payload = payload
 		this.headers = []
 		this.uid = Packet.uidCounter
 		Packet.uidCounter++
+		this.receiver = receiver
+		this.type = type
 	}
 	addHeader(header) {
 		const index = this.headers.findIndex(search => search.type === header.type)

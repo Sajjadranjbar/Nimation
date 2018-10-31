@@ -22,6 +22,26 @@
         link.href = window.location.search.match(/print-pdf/gi) ? 'style/print/pdf.css' : 'style/print/paper.css';
         document.getElementsByTagName('head')[0].appendChild(link);
     </script>
+    <style>
+        .restart {
+            background-color: Transparent;
+            border: 3px solid blueviolet;
+            cursor: pointer;
+            overflow: hidden;
+            outline: 1px;
+            color: blueviolet;
+            font-size: 18px;
+            border-radius: .3em;
+        }
+
+        .player {
+
+            position: fixed;
+            bottom: 0;
+
+
+        }
+    </style>
 </head>
 
 <body>
@@ -29,14 +49,17 @@
         <div class="slides">
 
             <section id="scene" style="height:100%;width: 100%">
-                <div class="line player align-items">
-                    <button class="play">Play</button>
-                    <button class="pause">Pause</button>
+                <div class="player">
                     <button class="restart">Restart</button>
-                    <input class="progress" step="2" type="range" min="0" max="100" value="0">
+                    <!-- <input class="AnimationProgress" step="2" type="range" min="0" max="100" value="0"> -->
                 </div>
             </section>
             <section id="scene2" style="height:100%">
+
+            </section>
+            <section id="scene3" style="height:100%">
+            </section>
+            <section id="scene4" style="height:100%">
             </section>
         </div>
     </div>
@@ -45,6 +68,7 @@
     <script src="lib/reveal.js"></script>
 
     <script>
+
         Reveal.initialize({
             dependencies: [
                 { src: 'plugin/markdown/marked.js' },

@@ -20,7 +20,7 @@ class Circle extends Node {
 			borderColor,
 			backColor,
 			textColor,
-			'900em',
+			900,
 			borderWidth,
 			text,
 			textSize
@@ -33,7 +33,7 @@ class Circle extends Node {
 	setRadius(radius) {
 		this.setSize(radius * 2, radius * 2)
 	}
-	cloneBorder() {
+	cloneBorder(style) {
 		const cln = new Circle(
 			'',
 			this.radius / 2,
@@ -42,9 +42,10 @@ class Circle extends Node {
 			'none',
 			this.borderWidth,
 			'xx-small',
-			this.x,
-			this.y
+			this.x + this.radius / 2,
+			this.y + this.radius / 2
 		)
+		cln.setBorderStyle(style)
 		return cln
 	}
 }

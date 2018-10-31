@@ -24,6 +24,13 @@ class NimationObject {
 		this.element.style.height = height + 'px'
 		this.element.style.display = 'table'
 		this.lastReceivedPacket = null
+		this.type = 'node'
+	}
+	setType(type) {
+		this.type = type
+	}
+	getType() {
+		return this.type
 	}
 	setScene(scene) {
 		this.scene = scene
@@ -93,12 +100,18 @@ class NimationObject {
 			this.textColor = color
 		}
 	}
+	setOpacity(opacity) {
+		if (this.element !== null) {
+			this.element.style.opacity = opacity
+		}
+	}
 	setText(text) {
 		if (this.element !== null) {
 			this.element.innerHTML =
 				'<div style="display: table-cell; vertical-align: middle;"><div>' +
 				text +
-				'</div></div>'
+				'</div>' +
+				'</div>'
 		}
 	}
 	setTextSize(textSize) {
@@ -108,7 +121,12 @@ class NimationObject {
 	}
 	setBorderRadius(radius) {
 		if (this.element !== null) {
-			this.element.style.borderRadius = radius
+			this.element.style.borderRadius = radius + 'em'
+		}
+	}
+	setBorderStyle(style) {
+		if (this.element !== null) {
+			this.element.style.borderStyle = style
 		}
 	}
 	setSize(width, height) {
@@ -118,6 +136,10 @@ class NimationObject {
 	setXY(x, y) {
 		this.x = x
 		this.y = y
+	}
+	setElementXY(x, y) {
+		this.element.style.left = x + 'px'
+		this.element.style.top = y + 'px'
 	}
 	getX() {
 		return this.x
@@ -137,7 +159,8 @@ class NimationObject {
 		it's message to the scene attached to.
 	*/
 	broadcast(packet, loop, size, duration) {
-		const broadcast = this.cloneBorder()
+		const broadcast = this.cloneBorder('solid')
+		broadcast.setType('broadcast')
 		this.scene.addObject(broadcast)
 
 		return new Promise(done => {
@@ -188,6 +211,64 @@ class NimationObject {
 			})
 		})
 	}
+
+	/*
+		every object use this method to unicast 
+		it's message to the destination in the same scene.
+	*/
+	unicast(packet, loop, size, duration) {
+		const unicast = this.cloneBorder('dotted')
+		unicast.setType('unicast')
+		this.scene.addObject(unicast)
+
+		return new Promise(done => {
+			anime({
+				targets: unicast.getElement(),
+				complete: () => {
+					this.scene.removeObject(unicast)
+					done()
+				},
+				update: () => {
+					unicast.setSize(
+						parseInt(unicast.getElement().style.width.slice(0, -2)),
+						parseInt(unicast.getElement().style.height.slice(0, -2))
+					)
+
+					unicast.setXY(
+						parseInt(unicast.getElement().style.left.slice(0, -2)),
+						parseInt(unicast.getElement().style.top.slice(0, -2))
+					)
+					this.scene.updateUnicastMessage(packet, unicast, this)
+				},
+				width: {
+					value: '+=' + size,
+					duration,
+					easing: 'easeInOutSine'
+				},
+				height: {
+					value: '+=' + size,
+					duration,
+					easing: 'easeInOutSine'
+				},
+				left: {
+					value: '-=' + size / 2,
+					duration,
+					easing: 'easeInOutSine'
+				},
+				top: {
+					value: '-=' + size / 2,
+					duration,
+					easing: 'easeInOutSine'
+				},
+				opacity: {
+					value: 0,
+					duration,
+					easing: 'easeInOutSine'
+				},
+				loop
+			})
+		})
+	}
 	/*
 		when ever there is a packet for this object 
 		scene will call this method with packet as argument.
@@ -203,7 +284,30 @@ class NimationObject {
 
 		// new packet recv here do stuffs
 		this.lastReceivedPacket = packet
-		console.log(packet)
+		console.log(this.id, packet)
+		// do some animation here
+		const message = this.cloneBorder('solid')
+		message.setType('message')
+		message.setText('new Packet:\n' + packet.payload)
+		message.setBorderRadius(0)
+		message.setOpacity(0)
+		message.setBorderWidth(1)
+		message.setElementXY(
+			this.getX() + this.getWidth() / 2,
+			this.getY() + this.getHeight() * 2
+		)
+		this.scene.addObject(message)
+		anime({
+			targets: message.getElement(),
+			complete: () => {
+				this.scene.removeObject(message)
+			},
+			opacity: {
+				value: 100,
+				duration: 2000,
+				easing: 'easeInOutSine'
+			}
+		})
 	}
 }
 export default NimationObject
