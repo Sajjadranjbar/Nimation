@@ -1,28 +1,33 @@
 import '../style/node_style.css'
-import Node from './lib/node'
 import Scene from './lib/scene'
+import Circle from './lib/circle'
 
 const scene = new Scene('scene')
-const scene1 = new Scene('scene2')
 
-const node1 = new Node(0, 0, 4, 3, '#ffb1a1', 'AAA', 'medium')
-const node2 = new Node(0, 0, 4, 3, '#ffb1a1', 'BBB', 'medium')
-const node3 = new Node(0, 0, 4, 3, '#ffb1a1', 'CCC', 'medium')
-scene.addObject(node1)
-scene.addObject(node2)
-scene.addObject(node3)
+const sink = new Circle()
+sink.setBorderWidth(5)
+sink.setBorderColor('#ff2255')
+sink.setText('Sink')
+sink.setRadius(30)
 
-node1.move(400, 400, 2000)
-node2.move(400, 400, 1000)
-node3.move(400, 400, 700)
+const source = new Circle()
+source.setBorderWidth(5)
+source.setBorderColor('#5522ff')
+source.setText('Source')
+source.setRadius(30)
 
-const snode1 = new Node(0, 0, 4, 3, '#ffb1a1', 'HHH', 'medium')
-const snode2 = new Node(0, 0, 4, 3, '#ffb1a1', 'JJJ', 'medium')
-const snode3 = new Node(0, 0, 4, 3, '#ffb1a1', 'TTT', 'medium')
-scene1.addObject(snode1)
-scene1.addObject(snode2)
-scene1.addObject(snode3)
+scene.addObject(sink)
+scene.addObject(source)
 
-snode1.move(400, 400, 2000)
-snode2.move(400, 400, 1000)
-snode3.move(400, 400, 700)
+sink.updateXY(400, 400)
+source.updateXY(100, 100)
+
+sink.move(200, 200, 2000, 1).finished.then(() => {
+	sink.broadcast('sajjad', 4, 300, 1000).finished.then(() => {
+		sink.move(400, 400, 1000, 1)
+	})
+})
+
+source.broadcast('sajjad', 6, 500, 600).finished.then(() => {
+	source.move(100, 700, 2000, 1)
+})
