@@ -2,29 +2,38 @@ import anime from 'animejs'
 class NimationObject {
 	constructor(x, y, width, height) {
 		this.scene = null
-		this.element = document.createElement('div')
-		this.element.id = Math.random()
+		this.elements = {}
+		this.elements['node'] = document.createElement('div')
+		this.elements['node'].id = Math.random()
 			.toString(36)
 			.substring(7)
-		this.id = this.element.id
-		this.element.style.position = 'absolute'
-		this.element.style.border = 'solid'
+		this.id = this.elements['node'].id
+		this.elements['node'].style.position = 'absolute'
+		this.elements['node'].style.border = 'solid'
 		this.x = x
 		this.y = y
 		this.destX = null
 		this.destY = null
 		this.width = width
 		this.height = height
-		this.element.style.position = 'absolute'
-		// this.setXY(x, y)
-
-		this.element.style.top = y + 'px'
-		this.element.style.left = x + 'px'
-		this.element.style.width = width + 'px'
-		this.element.style.height = height + 'px'
-		this.element.style.display = 'table'
+		this.elements['node'].style.top = y + 'px'
+		this.elements['node'].style.left = x + 'px'
+		this.elements['node'].style.width = width + 'px'
+		this.elements['node'].style.height = height + 'px'
+		this.elements['node'].style.display = 'table'
 		this.lastReceivedPacket = null
 		this.type = 'node'
+	}
+	setNodeSize(width, height) {
+		this.elements['node'].style.width = width + 'px'
+		this.elements['node'].style.height = height + 'px'
+	}
+	wait(ms) {
+		return new Promise(done => {
+			setTimeout(() => {
+				done()
+			}, ms)
+		})
 	}
 	setType(type) {
 		this.type = type
@@ -42,27 +51,38 @@ class NimationObject {
 		return this.id
 	}
 	setElement(element) {
-		this.element = element
+		this.elements['node'] = element
 	}
-	getElement() {
+	getNode() {
+		return this.elements['node']
+	}
+	getElements() {
 		return this.element
 	}
+	addElement(key, element) {
+		if (this.elements['node'] === null) {
+			console.error('this.elements[node] not initialized.')
+			return
+		}
+		this.elements[key] = element
+		this.elements['node'].appendChild(element)
+	}
 	updateXY(x, y) {
-		if (this.element !== null) {
-			this.element.style.left = x + 'px'
-			this.element.style.top = y + 'px'
-			this.element.style.transform = ''
+		if (this.elements['node'] !== undefined) {
+			this.elements['node'].style.left = x + 'px'
+			this.elements['node'].style.top = y + 'px'
+			this.elements['node'].style.transform = ''
 			this.x = x
 			this.y = y
 		}
 	}
-	move(x, y, duration, loop) {
+	move(x, y, duration, loop = false) {
 		const deltaX = x - this.x
 		const deltaY = y - this.y
 
 		return new Promise(done => {
 			anime({
-				targets: this.element,
+				targets: this.elements['node'],
 				translateX: [{ value: deltaX + 'px', duration }],
 				translateY: [{ value: deltaY + 'px', duration }],
 				complete: () => {
@@ -77,56 +97,65 @@ class NimationObject {
 	}
 
 	setBorderWidth(width) {
-		if (this.element !== null) {
-			this.element.style.borderWidth = width + 'px'
+		if (this.elements['node'] !== undefined) {
+			this.elements['node'].style.borderWidth = width + 'px'
 			this.borderWidth = width
 		}
 	}
 	setBorderColor(color) {
-		if (this.element !== null) {
-			this.element.style.borderColor = color
+		if (this.elements['node'] !== undefined) {
+			this.elements['node'].style.borderColor = color
 			this.borderColor = color
+		}
+		if (this.elements['battery'] !== undefined) {
+			this.elements['battery'].style.borderColor = color
+			this.elements['battery'].children[0].style.backgroundColor = color
 		}
 	}
 	setBackColor(color) {
-		if (this.element !== null) {
-			this.element.style.backgroundColor = color
+		if (this.elements['node'] !== undefined) {
+			this.elements['node'].style.backgroundColor = color
 			this.backColor = color
 		}
 	}
 	setTextColor(color) {
-		if (this.element !== null) {
-			this.element.style.color = color
+		if (this.elements['node'] !== undefined) {
+			this.elements['node'].style.color = color
 			this.textColor = color
 		}
 	}
 	setOpacity(opacity) {
-		if (this.element !== null) {
-			this.element.style.opacity = opacity
+		if (this.elements['node'] !== undefined) {
+			this.elements['node'].style.opacity = opacity
 		}
 	}
 	setText(text) {
-		if (this.element !== null) {
-			this.element.innerHTML =
-				'<div style="display: table-cell; vertical-align: middle;"><div>' +
-				text +
-				'</div>' +
-				'</div>'
+		if (this.elements['text'] === undefined) {
+			let tx = document.getElementById(this.id + '_text')
+			tx = document.createElement('div')
+			tx.id = this.id + '_text'
+			tx.style.display = 'table-cell'
+			tx.style.verticalAlign = 'middle'
+			this.elements['node'].appendChild(tx)
+			tx.innerHTML = '<div>' + text + '</div>' + '</div>'
+			this.elements['text'] = tx
+		} else {
+			this.elements['text'].innerHTML = '<div>' + text + '</div>' + '</div>'
 		}
 	}
 	setTextSize(textSize) {
-		if (this.element !== null) {
-			this.element.style.fontSize = textSize
+		if (this.elements['node'] !== undefined) {
+			this.elements['node'].style.fontSize = textSize
 		}
 	}
 	setBorderRadius(radius) {
-		if (this.element !== null) {
-			this.element.style.borderRadius = radius + 'em'
+		if (this.elements['node'] !== undefined) {
+			this.elements['node'].style.borderRadius = radius + 'em'
 		}
 	}
 	setBorderStyle(style) {
-		if (this.element !== null) {
-			this.element.style.borderStyle = style
+		if (this.elements['node'] !== undefined) {
+			this.elements['node'].style.borderStyle = style
 		}
 	}
 	setSize(width, height) {
@@ -138,8 +167,8 @@ class NimationObject {
 		this.y = y
 	}
 	setElementXY(x, y) {
-		this.element.style.left = x + 'px'
-		this.element.style.top = y + 'px'
+		this.elements['node'].style.left = x + 'px'
+		this.elements['node'].style.top = y + 'px'
 	}
 	getX() {
 		return this.x
@@ -158,27 +187,27 @@ class NimationObject {
 		every object use this method to broadcast 
 		it's message to the scene attached to.
 	*/
-	broadcast(packet, loop, size, duration) {
+	broadcast(packet, size, duration, loop = false) {
 		const broadcast = this.cloneBorder('solid')
 		broadcast.setType('broadcast')
 		this.scene.addObject(broadcast)
 
 		return new Promise(done => {
 			anime({
-				targets: broadcast.getElement(),
+				targets: broadcast.getNode(),
 				complete: () => {
 					this.scene.removeObject(broadcast)
 					done()
 				},
 				update: () => {
 					broadcast.setSize(
-						parseInt(broadcast.getElement().style.width.slice(0, -2)),
-						parseInt(broadcast.getElement().style.height.slice(0, -2))
+						parseInt(broadcast.getNode().style.width.slice(0, -2)),
+						parseInt(broadcast.getNode().style.height.slice(0, -2))
 					)
 
 					broadcast.setXY(
-						parseInt(broadcast.getElement().style.left.slice(0, -2)),
-						parseInt(broadcast.getElement().style.top.slice(0, -2))
+						parseInt(broadcast.getNode().style.left.slice(0, -2)),
+						parseInt(broadcast.getNode().style.top.slice(0, -2))
 					)
 					this.scene.updateMessage(packet, broadcast, this)
 				},
@@ -216,27 +245,27 @@ class NimationObject {
 		every object use this method to unicast 
 		it's message to the destination in the same scene.
 	*/
-	unicast(packet, loop, size, duration) {
+	unicast(packet, size, duration, loop = false) {
 		const unicast = this.cloneBorder('dotted')
 		unicast.setType('unicast')
 		this.scene.addObject(unicast)
 
 		return new Promise(done => {
 			anime({
-				targets: unicast.getElement(),
+				targets: unicast.getNode(),
 				complete: () => {
 					this.scene.removeObject(unicast)
 					done()
 				},
 				update: () => {
 					unicast.setSize(
-						parseInt(unicast.getElement().style.width.slice(0, -2)),
-						parseInt(unicast.getElement().style.height.slice(0, -2))
+						parseInt(unicast.getNode().style.width.slice(0, -2)),
+						parseInt(unicast.getNode().style.height.slice(0, -2))
 					)
 
 					unicast.setXY(
-						parseInt(unicast.getElement().style.left.slice(0, -2)),
-						parseInt(unicast.getElement().style.top.slice(0, -2))
+						parseInt(unicast.getNode().style.left.slice(0, -2)),
+						parseInt(unicast.getNode().style.top.slice(0, -2))
 					)
 					this.scene.updateUnicastMessage(packet, unicast, this)
 				},
@@ -288,7 +317,8 @@ class NimationObject {
 		// do some animation here
 		const message = this.cloneBorder('solid')
 		message.setType('message')
-		message.setText('new Packet:\n' + packet.payload)
+		message.setText('new:\n' + packet.payload)
+		message.setTextSize('medium')
 		message.setBorderRadius(0)
 		message.setOpacity(0)
 		message.setBorderWidth(1)
@@ -298,7 +328,7 @@ class NimationObject {
 		)
 		this.scene.addObject(message)
 		anime({
-			targets: message.getElement(),
+			targets: message.getNode(),
 			complete: () => {
 				this.scene.removeObject(message)
 			},

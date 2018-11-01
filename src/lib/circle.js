@@ -3,11 +3,11 @@ import Node from './node'
 class Circle extends Node {
 	constructor(
 		text = 'A',
-		radius = 50,
+		radius = 30,
 		borderColor = 'white',
 		backColor = 'none',
 		textColor = 'white',
-		borderWidth = 10,
+		borderWidth = 5,
 		textSize = 'medium',
 		x = 0,
 		y = 0
@@ -46,6 +46,23 @@ class Circle extends Node {
 			this.y + this.radius / 2
 		)
 		cln.setBorderStyle(style)
+		return cln
+	}
+	cloneFill() {
+		const cln = new Circle(
+			'',
+			this.radius / 2,
+			this.borderColor,
+			this.backColor,
+			'none',
+			this.borderWidth,
+			'xx-small',
+			this.x + this.radius / 2,
+			this.y + this.radius / 2
+		)
+		cln.setBorderStyle('solid')
+		cln.setBackColor(this.borderColor)
+
 		return cln
 	}
 }

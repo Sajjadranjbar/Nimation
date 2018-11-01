@@ -8,7 +8,7 @@ class Scene {
 		this.packets = []
 	}
 	addObject(object) {
-		this.element.appendChild(object.getElement())
+		this.element.appendChild(object.getNode())
 		this.objects.push(object)
 		object.setScene(this)
 	}
@@ -17,7 +17,7 @@ class Scene {
 		if (index !== -1) {
 			this.objects.splice(index, 1)
 		}
-		this.element.removeChild(object.getElement())
+		this.element.removeChild(object.getNode())
 	}
 	updateMessage(packet, object, ownNode) {
 		this.objects.forEach(objectInList => {
@@ -45,6 +45,21 @@ class Scene {
 					objectInList.getY() < object.getY() + object.getHeight())
 			) {
 				objectInList.recv(packet)
+			}
+		})
+	}
+	updateEnergyMessage(energy, object, ownNode) {
+		this.objects.forEach(objectInList => {
+			if (
+				ownNode !== objectInList &&
+				objectInList.elements['battery'] !== undefined &&
+				objectInList.getType() === 'node' &&
+				(objectInList.getX() > object.getX() &&
+					objectInList.getX() < object.getX() + object.getWidth()) &&
+				(objectInList.getY() > object.getY() &&
+					objectInList.getY() < object.getY() + object.getHeight())
+			) {
+				objectInList.harvest(energy)
 			}
 		})
 	}
