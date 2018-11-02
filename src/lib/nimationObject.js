@@ -1,9 +1,16 @@
 import anime from 'animejs'
+import '../../style/node_style.css'
 class NimationObject {
 	constructor(x, y, width, height) {
 		this.scene = null
 		this.elements = {}
 		this.elements['node'] = document.createElement('div')
+		this.elements['node'].addEventListener('dblclick', () => {
+			this.showActions()
+		})
+		this.elements['node'].addEventListener('click', () => {
+			this.hideActions()
+		})
 		this.elements['node'].id = Math.random()
 			.toString(36)
 			.substring(7)
@@ -21,12 +28,70 @@ class NimationObject {
 		this.elements['node'].style.width = width + 'px'
 		this.elements['node'].style.height = height + 'px'
 		this.elements['node'].style.display = 'table'
+		this.elements['node'].style.zIndex = 900
 		this.lastReceivedPacket = null
 		this.type = 'node'
+		this.onRecv = packet => {}
+		this.actions = null
+		this.borderColor = null
+		this.backColor = null
+		this.textColor = null
 	}
 	setNodeSize(width, height) {
 		this.elements['node'].style.width = width + 'px'
 		this.elements['node'].style.height = height + 'px'
+	}
+	addAction(title, callback) {
+		if (this.actions === null) {
+			this.actions = this.cloneBorder('solid')
+			this.actions.setType('action')
+			this.actions.setBorderRadius(0)
+			this.actions.setOpacity(0)
+			this.actions.setBorderWidth(2)
+			this.actions.setElementXY(
+				this.getX() + this.getWidth() / 3,
+				this.getY() + this.getHeight() + 20
+			)
+
+			this.actions.setBorderColor(this.borderColor)
+			this.actions.setTextColor(this.textColor)
+			this.actions.getNode().style.zIndex = 1000
+		}
+		const act = document.createElement('button')
+		act.id = 'action_' + title + '_' + this.id
+		act.innerHTML = title
+		act.setAttribute('class', 'node_action')
+		act.style.color = this.textColor
+		act.addEventListener('click', () => {
+			this.hideActions()
+			callback()
+		})
+		this.actions.addElement('action_' + title + '_' + this.id, act)
+		this.scene.addObject(this.actions)
+	}
+	showActions() {
+		if (this.actions === null) return false
+		this.actions.setOpacity(100)
+		// anime({
+		// 	targets: this.actions.getNode(),
+		// 	opacity: {
+		// 		value: 100,
+		// 		duration: 400,
+		// 		easing: 'easeInOutSine'
+		// 	}
+		// })
+	}
+	hideActions() {
+		if (this.actions === null) return
+		this.actions.setOpacity(0)
+		// anime({
+		// 	targets: this.actions.getNode(),
+		// 	opacity: {
+		// 		value: 0,
+		// 		duration: 400,
+		// 		easing: 'easeInOutSine'
+		// 	}
+		// })
 	}
 	wait(ms) {
 		return new Promise(done => {
@@ -129,6 +194,7 @@ class NimationObject {
 			this.elements['node'].style.opacity = opacity
 		}
 	}
+
 	setText(text) {
 		if (this.elements['text'] === undefined) {
 			let tx = document.getElementById(this.id + '_text')
@@ -191,7 +257,9 @@ class NimationObject {
 		const broadcast = this.cloneBorder('solid')
 		broadcast.setType('broadcast')
 		this.scene.addObject(broadcast)
-
+		packet.sender = this
+		packet.duration = duration
+		packet.areaSize = size * 2
 		return new Promise(done => {
 			anime({
 				targets: broadcast.getNode(),
@@ -199,35 +267,26 @@ class NimationObject {
 					this.scene.removeObject(broadcast)
 					done()
 				},
-				update: () => {
-					broadcast.setSize(
-						parseInt(broadcast.getNode().style.width.slice(0, -2)),
-						parseInt(broadcast.getNode().style.height.slice(0, -2))
-					)
-
-					broadcast.setXY(
-						parseInt(broadcast.getNode().style.left.slice(0, -2)),
-						parseInt(broadcast.getNode().style.top.slice(0, -2))
-					)
-					this.scene.updateMessage(packet, broadcast, this)
+				begin: () => {
+					this.scene.updateMessage(packet, this, loop)
 				},
 				width: {
-					value: '+=' + size,
+					value: '+=' + size * 2,
 					duration,
 					easing: 'easeInOutSine'
 				},
 				height: {
-					value: '+=' + size,
+					value: '+=' + size * 2,
 					duration,
 					easing: 'easeInOutSine'
 				},
 				left: {
-					value: '-=' + size / 2,
+					value: '-=' + size,
 					duration,
 					easing: 'easeInOutSine'
 				},
 				top: {
-					value: '-=' + size / 2,
+					value: '-=' + size,
 					duration,
 					easing: 'easeInOutSine'
 				},
@@ -249,7 +308,9 @@ class NimationObject {
 		const unicast = this.cloneBorder('dotted')
 		unicast.setType('unicast')
 		this.scene.addObject(unicast)
-
+		packet.sender = this
+		packet.duration = duration
+		packet.areaSize = size * 2
 		return new Promise(done => {
 			anime({
 				targets: unicast.getNode(),
@@ -257,35 +318,27 @@ class NimationObject {
 					this.scene.removeObject(unicast)
 					done()
 				},
-				update: () => {
-					unicast.setSize(
-						parseInt(unicast.getNode().style.width.slice(0, -2)),
-						parseInt(unicast.getNode().style.height.slice(0, -2))
-					)
-
-					unicast.setXY(
-						parseInt(unicast.getNode().style.left.slice(0, -2)),
-						parseInt(unicast.getNode().style.top.slice(0, -2))
-					)
-					this.scene.updateUnicastMessage(packet, unicast, this)
+				begin: () => {
+					this.scene.updateUnicastMessage(packet, loop)
 				},
+
 				width: {
-					value: '+=' + size,
+					value: '+=' + size * 2,
 					duration,
 					easing: 'easeInOutSine'
 				},
 				height: {
-					value: '+=' + size,
+					value: '+=' + size * 2,
 					duration,
 					easing: 'easeInOutSine'
 				},
 				left: {
-					value: '-=' + size / 2,
+					value: '-=' + size,
 					duration,
 					easing: 'easeInOutSine'
 				},
 				top: {
-					value: '-=' + size / 2,
+					value: '-=' + size,
 					duration,
 					easing: 'easeInOutSine'
 				},
@@ -298,45 +351,158 @@ class NimationObject {
 			})
 		})
 	}
+
+	/*
+		every object use this method to unicast 
+		it's message to the destination in the same scene.
+	*/
+	multicast(packet, size, duration, loop = false) {
+		const unicast = this.cloneBorder('dotted')
+		unicast.setType('unicast')
+		this.scene.addObject(unicast)
+		packet.sender = this
+		packet.duration = duration
+		packet.areaSize = size * 2
+		return new Promise(done => {
+			anime({
+				targets: unicast.getNode(),
+				complete: () => {
+					this.scene.removeObject(unicast)
+					done()
+				},
+				begin: () => {
+					this.scene.updateMulticastMessage(packet, loop)
+				},
+				width: {
+					value: '+=' + size * 2,
+					duration,
+					easing: 'easeInOutSine'
+				},
+				height: {
+					value: '+=' + size * 2,
+					duration,
+					easing: 'easeInOutSine'
+				},
+				left: {
+					value: '-=' + size,
+					duration,
+					easing: 'easeInOutSine'
+				},
+				top: {
+					value: '-=' + size,
+					duration,
+					easing: 'easeInOutSine'
+				},
+				opacity: {
+					value: 0,
+					duration,
+					easing: 'easeInOutSine'
+				},
+				loop
+			})
+		})
+	}
+	showMessage(message, duration, callback, color = null) {
+		const messageAnim = this.cloneBorder('solid')
+		messageAnim.setType('message')
+		messageAnim.setText(message)
+		messageAnim.setTextSize('medium')
+		messageAnim.setBorderRadius(0)
+		messageAnim.setOpacity(0)
+		messageAnim.setBorderWidth(1)
+		messageAnim.setElementXY(
+			this.getX() + this.getWidth() / 3,
+			this.getY() + this.getHeight() + 20
+		)
+		if (color !== null) {
+			messageAnim.setBorderColor(color)
+			messageAnim.setTextColor(color)
+		}
+		this.scene.addObject(messageAnim)
+		anime({
+			targets: messageAnim.getNode(),
+			complete: () => {
+				this.scene.removeObject(messageAnim)
+				callback()
+			},
+			opacity: {
+				value: 100,
+				duration: duration,
+				easing: 'easeInOutSine'
+			}
+		})
+	}
+
 	/*
 		when ever there is a packet for this object 
 		scene will call this method with packet as argument.
 	*/
-	recv(packet) {
-		//received a packet from scene
-		if (
-			this.lastReceivedPacket !== null &&
-			this.lastReceivedPacket.uid === packet.uid
-		) {
-			return
-		}
-
-		// new packet recv here do stuffs
-		this.lastReceivedPacket = packet
-		console.log(this.id, packet)
-		// do some animation here
-		const message = this.cloneBorder('solid')
-		message.setType('message')
-		message.setText('new:\n' + packet.payload)
-		message.setTextSize('medium')
-		message.setBorderRadius(0)
-		message.setOpacity(0)
-		message.setBorderWidth(1)
-		message.setElementXY(
-			this.getX() + this.getWidth() / 2,
-			this.getY() + this.getHeight() * 2
+	recv(packet, loop) {
+		const distance = Math.sqrt(
+			Math.pow(this.x - packet.sender.x, 2) +
+				Math.pow(this.y - packet.sender.y, 2)
 		)
-		this.scene.addObject(message)
-		anime({
-			targets: message.getNode(),
-			complete: () => {
-				this.scene.removeObject(message)
-			},
-			opacity: {
-				value: 100,
-				duration: 2000,
-				easing: 'easeInOutSine'
+		if (distance < packet.areaSize / 2 + this.width) {
+			if (!loop) loop = 1
+			for (let index = 0; index < loop; index++) {
+				setTimeout(() => {
+					this.showMessage(packet.payload, packet.duration - 500, () => {
+						this.onRecv(packet)
+					})
+				}, ((packet.areaSize - distance + 100) / packet.areaSize) * packet.duration * (index + 1))
 			}
+		}
+	}
+
+	/*
+		every object use this method to Transfer Wireless Power 
+		to space
+	*/
+	WPT(energy, size, duration, loop = false) {
+		const energyAnim = this.cloneFill()
+		energyAnim.setType('energy')
+		this.scene.addObject(energyAnim)
+		energy.sender = this
+		energy.areaSize = size * 2
+		energy.duration = duration
+		return new Promise(done => {
+			anime({
+				targets: energyAnim.getNode(),
+				complete: () => {
+					this.scene.removeObject(energyAnim)
+
+					done()
+				},
+				begin: () => {
+					this.scene.updateEnergyMessage(energy, loop)
+				},
+				width: {
+					value: '+=' + size * 2,
+					duration,
+					easing: 'easeInOutSine'
+				},
+				height: {
+					value: '+=' + size * 2,
+					duration,
+					easing: 'easeInOutSine'
+				},
+				left: {
+					value: '-=' + size,
+					duration,
+					easing: 'easeInOutSine'
+				},
+				top: {
+					value: '-=' + size,
+					duration,
+					easing: 'easeInOutSine'
+				},
+				opacity: {
+					value: 0,
+					duration,
+					easing: 'easeInOutSine'
+				},
+				loop
+			})
 		})
 	}
 }

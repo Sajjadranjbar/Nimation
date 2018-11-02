@@ -46,6 +46,7 @@ class Circle extends Node {
 			this.y + this.radius / 2
 		)
 		cln.setBorderStyle(style)
+		cln.getNode().zIndex = 800
 		return cln
 	}
 	cloneFill() {
@@ -62,6 +63,7 @@ class Circle extends Node {
 		)
 		cln.setBorderStyle('solid')
 		cln.setBackColor(this.borderColor)
+		cln.getNode().zIndex = 800
 
 		return cln
 	}

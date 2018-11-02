@@ -1,9 +1,12 @@
 class Energy {
-	constructor(charge, receiver = null) {
+	constructor(charge, receivers = null) {
 		this.charge = charge
-		this.receiver = receiver
+		this.receivers = receivers
+		this.sender = null
 		this.uid = Energy.uidCounter
 		Energy.uidCounter++
+		this.duration = null
+		this.areaSize = null
 	}
 	getCharge() {
 		return this.charge

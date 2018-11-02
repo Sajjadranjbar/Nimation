@@ -65,9 +65,15 @@ class BatteryNode extends Circle {
 				this.batInDiv.style.height = this.height
 		}
 	}
+	getCharge() {
+		return this.charge
+	}
+	setCharge(charge) {
+		this.charge = charge
+	}
 	updateBattery(value) {
 		this.charge = value
-		let height = (this.charge / this.capacity) * (this.height - 12) //6 is border width
+		let height = (this.charge / this.capacity) * (this.height - 14) //6 is border width
 		if (height > this.height) {
 			height = this.height - 14
 		}
@@ -81,15 +87,55 @@ class BatteryNode extends Circle {
 		})
 	}
 	harvest(energy) {
-		if (
-			this.lastReceivedEnergy !== null &&
-			this.lastReceivedEnergy.uid === energy.uid
-		) {
-			return
+		const distance = Math.sqrt(
+			Math.pow(this.x - energy.sender.x, 2) +
+				Math.pow(this.y - energy.sender.y, 2)
+		)
+		if (distance < energy.areaSize / 2 + this.width) {
+			setTimeout(() => {
+				const ex =
+					this.charge + energy.getCharge() > this.capacity
+						? this.capacity
+						: this.charge + energy.getCharge()
+				this.updateBattery(ex)
+			}, ((energy.areaSize - distance + 100) / energy.areaSize) * energy.duration)
 		}
-		this.lastReceivedEnergy = energy
-		console.log('battery node recv energy')
-		this.updateBattery(this.charge + energy.getCharge())
+	}
+
+	unicast(packet, size, duration, loop = false) {
+		if (this.charge >= 40) {
+			this.charge -= 40
+			return super.unicast(packet, size, duration, loop)
+		} else {
+			return new Promise((done, reject) => {
+				this.showMessage('Low Battery Send', 2000, () => {}, '#ff0000')
+				reject()
+			})
+		}
+	}
+
+	broadcast(packet, size, duration, loop = false) {
+		if (this.charge >= 40) {
+			this.charge -= 40
+			return super.unicast(packet, size, duration, loop)
+		} else {
+			return new Promise((done, reject) => {
+				this.showMessage('Low Battery Send', 2000, () => {}, '#ff0000')
+				reject()
+			})
+		}
+	}
+
+	multicast(packet, size, duration, loop = false) {
+		if (this.charge >= 40) {
+			this.charge -= 40
+			return super.multicast(packet, size, duration, loop)
+		} else {
+			return new Promise((done, reject) => {
+				this.showMessage('Low Battery Send', 2000, () => {}, '#ff0000')
+				reject()
+			})
+		}
 	}
 
 	/*
@@ -112,6 +158,9 @@ class BatteryNode extends Circle {
 		energyAnim.setType('energy')
 		this.scene.addObject(energyAnim)
 		energy.setCharge(transferEnergy)
+		energy.sender = this
+		energy.areaSize = size
+		energy.duration = duration
 		return new Promise(done => {
 			anime({
 				targets: energyAnim.getNode(),
@@ -122,19 +171,9 @@ class BatteryNode extends Circle {
 				begin: () => {
 					//in animation begin decrease nodes battery level
 					this.updateBattery(this.charge - transferEnergy)
+					this.scene.updateEnergyMessage(energy)
 				},
-				update: () => {
-					energyAnim.setSize(
-						parseInt(energyAnim.getNode().style.width.slice(0, -2)),
-						parseInt(energyAnim.getNode().style.height.slice(0, -2))
-					)
 
-					energyAnim.setXY(
-						parseInt(energyAnim.getNode().style.left.slice(0, -2)),
-						parseInt(energyAnim.getNode().style.top.slice(0, -2))
-					)
-					this.scene.updateEnergyMessage(energy, energyAnim, this)
-				},
 				width: {
 					value: '+=' + size,
 					duration,
@@ -162,6 +201,28 @@ class BatteryNode extends Circle {
 				}
 			})
 		})
+	}
+	recv(packet, loop) {
+		const distance = Math.sqrt(
+			Math.pow(this.x - packet.sender.x, 2) +
+				Math.pow(this.y - packet.sender.y, 2)
+		)
+		if (distance < packet.areaSize / 2 + this.width) {
+			if (!loop) loop = 1
+			for (let index = 0; index < loop; index++) {
+				setTimeout(() => {
+					if (!(this.charge > 40)) {
+						this.showMessage('Low Battery Recv', 2000, () => {}, '#ff0000')
+						return
+					}
+					// has energy to recv message
+					this.showMessage(packet.payload, packet.duration - 500, () => {
+						this.onRecv(packet)
+					})
+					this.updateBattery(this.charge - 40)
+				}, ((packet.areaSize - distance + 100) / packet.areaSize) * packet.duration * (index + 1))
+			}
+		}
 	}
 }
 
